@@ -14,9 +14,23 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   has_feature :versionable
 
   def query
+    if do_pkginfo(@resource[:name])
+      return {:ensure => :installed}
+    end
+  end
+
+  def self.instances
+    packages = []
+    do_pkginfo(@resource[:name]).each do |pkg|
+        packages << new(pkg)
+    end
+    packages
+  end
+
+  def do_pkginfo(pkgspec)
     packages = []
     begin
-      output = perl(:pkginfo, "-e", @resource[:name])
+      output = pkginfo("-e", pkgspec)
     rescue Puppet::ExecutionFailure
        return nil
     end
@@ -29,7 +43,7 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
         fields.zip(match.captures) { | field, value|
             hash[field] = value
         }
-        packages << new(hash)
+        packages << hash
       end
     }
 
