@@ -45,12 +45,12 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
 end
 
-def pkghelper(pkgpath, pkgspec = "*-*")
+def pkghelper(pkgpath, *pkgspecs)
   packages = []
   output = ''
   begin
     withenv :PKG_PATH => pkgpath do
-      output = perl(PKGHELPER, pkgspec)
+      output = perl(PKGHELPER, *pkgspecs)
     end
   rescue Puppet::ExecutionFailure
     return nil
