@@ -161,3 +161,11 @@ def pkghelper(pkgpath, *pkgspecs)
   packages
 end
 
+def agghash(hash, key)
+  tmp = {}
+  for k, v in hash
+    tmp[v[key]] || tmp[v[key]] = []
+    tmp[v[key]] << v
+  end
+  tmp
+end
