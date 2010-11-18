@@ -43,9 +43,7 @@ def do_pkginfo(pkgspec = "*-*")
     fields = [:name, :version, :flavor]
     if match = %r{^inst:(.*)-(\d.*?)(-.*)?$}.match(line)
       hash = {}
-      fields.zip(match.captures) { | field, value|
-          hash[field] = value
-      }
+      fields.zip(match.captures) {|f,v| hash[f] = v }
       packages << hash
     end
   }
