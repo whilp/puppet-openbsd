@@ -41,15 +41,12 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   end
 
   def query
-    absent = []
     for pkg in @matches
-      if pkg[:ensure] == "present"
-        return pkg
-      else
-        absent << pkg
+      if pkg[:ensure] != @resource[:ensure] then
+        return {:ensure => pkg[:ensure]}
       end
     end
-    return {:ensure => :absent, :absent => absent}
+    return {:ensure => @resource[:ensure]}
   end
 
   def install
