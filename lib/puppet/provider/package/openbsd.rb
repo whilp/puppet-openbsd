@@ -14,6 +14,19 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
   has_feature :versionable
 
+  def self.prefetch(packages)
+    sources = Hash.new([])
+    packages.each{|pat,pkg| sources[pkg[:source]] = sources[pkg[:source]] << pat}
+
+    instances = []
+    sources.each do |source, patterns|
+      for pkg in pkghelper(source, *patterns)
+        pkg = new(pkg)
+        pkg.provider = pkg
+      end
+    end
+  end
+
   def query
     absent = []
     for pkg in pkghelper(@resource[:source], @resource[:name])
@@ -24,13 +37,6 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
       end
     end
     return {:ensure => :absent, :absent => absent}
-  end
-
-  def self.prefetch(packages)
-  end
-
-  def self.instances
-    []
   end
 
   def install
