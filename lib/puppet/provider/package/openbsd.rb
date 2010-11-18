@@ -16,14 +16,55 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
   def self.prefetch(packages)
     sources = Hash.new([])
-    packages.each{|pat,pkg| sources[pkg[:source]] = sources[pkg[:source]] << pat}
+    packages.each{|name,pkg| 
+        sources[pkg[:source]] = sources[pkg[:source]] << name}
 
-    instances = []
-    sources.each do |source, patterns|
-      for pkg in pkghelper(source, *patterns)
-        pkg = new(pkg)
-        pkg.provider = pkg
+
+
+
+    present = Hash.new([])
+    absent = Hash.new([])
+    sources.each{|s,p| pkghelper(s, *p).each do |hash|
+      pattern = hash[:pattern]
+      if hash[:ensure] == "present"
+        present[pattern] = present[pattern] << hash
+      else
+        absent[pattern] = absent[pattern] << hash
       end
+    }
+
+    for pattern, hashes in absent do
+      packages[pattern].provider = new(hash)
+        #patterns.each{|p| packages[p].provider = new(hash)}
+    end
+    for pattern, hashes
+    for pattern, hashes in [present, absent].flatten do
+    end
+
+    allhashes = Hash.new([])
+    sources.each do |source, patterns|
+      for hash in pkghelper(source, *patterns)
+        allhashes[hash[:pattern]] = allhashes[hash[:pattern]] << hash
+      end
+    end
+
+    for pattern, hashes in hashes do
+      for hash in hashes do
+        if hash[:ensure] != "present"
+      end
+    end
+
+    for hash in hashes do
+      if hash[:ensure] != "present"
+        hash[:absent]
+      end
+    end
+        patterns.each{|p| packages[p].provider = new(hash)}
+
+    absent.each do |pattern, absents|
+      puts ">>> #{packages[pattern].provider@absent}"
+      packages[pattern].provider@absent
+      #packages[pattern].provider@property_hash[:absent] = absents
     end
   end
 
@@ -80,8 +121,8 @@ def pkghelper(pkgpath, *pkgspecs)
 
   output.each { |line|
     line.chomp!
-    fields = [:ensure, :name, :version, :flavor]
-    if match = %r{^(present|absent):(.*)-(\d.*?)(-.*)?$}.match(line)
+    fields = [:ensure, :pattern, :name, :version, :flavor]
+    if match = %r{^(present|absent)\t([^ ]*)\t(.*)-(\d.*?)(-.*)?$}.match(line)
       hash = {}
       fields.zip(match.captures) {|f,v| hash[f] = v }
       packages << hash

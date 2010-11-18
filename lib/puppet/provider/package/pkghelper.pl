@@ -11,6 +11,6 @@ for my $pattern (@ARGV) {
 		if (OpenBSD::PackageInfo::is_installed($p->name)) {
 			$status = "present";
 		};
-		print $status . ":" . $p->name . "\n";
+		print $status . "\t" . $pattern . "\t" . $p->name . "\n";
 	}
 }
