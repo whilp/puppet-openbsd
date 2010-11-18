@@ -45,6 +45,22 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
 end
 
+# Inline withenv() for pkghelper.
+def withenv(hash)
+  oldvals = {}
+  hash.each do |name, val|
+    name = name.to_s
+    oldvals[name] = ENV[name]
+    ENV[name] = val
+  end
+
+  yield
+ensure
+  oldvals.each do |name, val|
+    ENV[name] = val
+  end
+end
+
 def pkghelper(pkgpath, *pkgspecs)
   packages = []
   output = ''
