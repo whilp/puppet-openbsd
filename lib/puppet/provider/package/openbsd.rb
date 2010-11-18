@@ -25,32 +25,6 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
     sources = defaulthash.dup
     packages.each { |name, pkg| sources[pkg[:source]] <<= pkg }
-
- def otherstuff
-    for name, pkg in packages
-      source = pkg[:source]
-      sources[source] || sources[source] = []
-      sources[source] << pkg
-    end
-
-    # Run pkghelper for each unique source, mapping names to
-    # matching hashes.
-    matches = {}
-    for source, pkgs in sources
-      puts 
-      for match in pkghelper(source, *pkgs.each{|p| return p[:name]})
-        pattern = match[:pattern]
-        names[pattern] || names[pattern] = []
-        names[pattern] << match
-      end
-    end
-
-    #names.each{|name,pkg|
-    #  puts ">>> #{name} #{names[name].length}"
-    #}
-    #names.each{|name,matches|
-    #  packages[name].provider.matches = matches
-    #}
   end
 
   def query
@@ -120,13 +94,4 @@ def pkghelper(pkgpath, *pkgspecs)
   }
 
   packages
-end
-
-def agghash(hash, key)
-  tmp = {}
-  for k, v in hash
-    tmp[v[key]] || tmp[v[key]] = []
-    tmp[v[key]] << v
-  end
-  tmp
 end
