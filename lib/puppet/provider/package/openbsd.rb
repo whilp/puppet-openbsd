@@ -56,12 +56,9 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   end
 
   def install
-    for absent in @property_hash[:absent]
-      fields = [:name, :version, :flavor]
-      pkgname = absent.values_at(*fields).join("-").chomp("-")
-      withenv :PKG_PATH => @resource[:source] do
-        pkgadd(pkgname)
-      end
+    packages = mismatches.collect { |p| p[:pkgname] }
+    withenv :PKG_PATH => @resource[:source] do
+      pkgadd(*packages)
     end
   end
 
@@ -100,6 +97,7 @@ def pkghelper(pkgpath, *pkgspecs)
     if match = %r{^(present|absent)\t([^ ]*)\t(.*)-(\d.*?)(-.*)?$}.match(line)
       hash = {}
       fields.zip(match.captures) {|f,v| hash[f] = v }
+      hash[:pkgname] = hash.values_at(:name, :version, :flavor).join("-").chomp("-")
       packages << hash
     end
   }
