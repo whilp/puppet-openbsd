@@ -41,12 +41,18 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   end
 
   def query
-    for pkg in @matches
-      if pkg[:ensure] != @resource[:ensure] then
-        return {:ensure => pkg[:ensure]}
-      end
+    for pkg in mismatches
+      return {:ensure => pkg[:ensure]}
     end
     return {:ensure => @resource[:ensure]}
+  end
+
+  def mismatches
+    mismatches = []
+    for pkg in @matches
+      mismatches << pkg if pkg[:ensure] != @resource[:ensure]
+    end
+    return mismatches
   end
 
   def install
