@@ -15,28 +15,43 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   has_feature :versionable
 
   def query
-    for pkg in pkghelper(@resource[:name])
+    absent = []
+    for pkg in pkghelper(@resource[:source], @resource[:name])
       if pkg[:ensure] == "present"
         return pkg
+      else
+        absent << pkg
       end
     end
-    return {:ensure => :absent}
+    return {:ensure => :absent, :absent => absent}
+  end
+
+  def self.prefetch(packages)
   end
 
   def self.instances
-    packages = []
-    pkghelper().each do |pkg|
-      packages << new(pkg)
+    []
+  end
+
+  def install
+    for absent in @property_hash[:absent]
+      fields = [:name, :version, :flavor]
+      pkgname = absent.values_at(*fields).join("-").chomp("-")
+      withenv :PKG_PATH => @resource[:source] do
+        pkgadd(pkgname)
+      end
     end
-    packages
   end
 
 end
 
-def pkghelper(pkgspec = "*-*")
+def pkghelper(pkgpath, pkgspec = "*-*")
   packages = []
+  output = ''
   begin
-    output = perl(PKGHELPER, pkgspec)
+    withenv :PKG_PATH => pkgpath do
+      output = perl(PKGHELPER, pkgspec)
+    end
   rescue Puppet::ExecutionFailure
     return nil
   end
