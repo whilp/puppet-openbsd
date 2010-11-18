@@ -1,12 +1,13 @@
 require 'puppet/provider/package'
 
+PKGHELPER = File::join(File::dirname(__FILE__), "pkghelper.pl")
+
 Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Package do
   include Puppet::Util::Execution
   desc "OpenBSD's form of `pkg_add` support."
 
   commands :pkginfo => "pkg_info", :pkgadd => "pkg_add", :pkgdelete => "pkg_delete"
   commands :perl => "perl"
-  pkghelper = File::join(File::dirname(__FILE__), "pkghelper.pl")
 
   defaultfor :operatingsystem => :openbsd
   confine :operatingsystem => :openbsd
@@ -14,34 +15,36 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   has_feature :versionable
 
   def query
-    if do_pkginfo(@resource[:name])
-      return {:ensure => :installed}
+    for pkg in pkghelper(@resource[:name])
+      if pkg[:ensure] == "present"
+        return pkg
+      end
     end
+    return {:ensure => :absent}
   end
 
   def self.instances
     packages = []
-    do_pkginfo().each do |pkg|
-        pkg[:ensure] = :installed
-        packages << new(pkg)
+    pkghelper().each do |pkg|
+      packages << new(pkg)
     end
     packages
   end
 
 end
 
-def do_pkginfo(pkgspec = "*-*")
+def pkghelper(pkgspec = "*-*")
   packages = []
   begin
-    output = pkginfo("-e", pkgspec)
+    output = perl(PKGHELPER, pkgspec)
   rescue Puppet::ExecutionFailure
-     return nil
+    return nil
   end
 
   output.each { |line|
     line.chomp!
-    fields = [:name, :version, :flavor]
-    if match = %r{^inst:(.*)-(\d.*?)(-.*)?$}.match(line)
+    fields = [:ensure, :name, :version, :flavor]
+    if match = %r{^(present|absent):(.*)-(\d.*?)(-.*)?$}.match(line)
       hash = {}
       fields.zip(match.captures) {|f,v| hash[f] = v }
       packages << hash
@@ -50,3 +53,4 @@ def do_pkginfo(pkgspec = "*-*")
 
   packages
 end
+
