@@ -40,6 +40,7 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   end
 
   def query
+    absent = []
     for pkg in @matches
       if pkg[:ensure] == "present"
         return pkg
