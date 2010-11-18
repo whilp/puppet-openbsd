@@ -14,90 +14,51 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
   has_feature :versionable
 
+  attr_accessor :matches
+
   def self.prefetch(packages)
+    defaulthash = Hash.new { |h, k| [] }
     # Invert the packages hash, mapping each unique source to the
-    # packages defined with that source.
-    sources = Hash.new([])
-    packages.each{|name,pkg| sources[pkg[:source]] <<= name}
+    # packages defined with that source. This allows us to make the
+    # fewest number of calls to pkghelper (and, possibly, to a slow
+    # resource on the net defined in PKG_PATH).
+
+    sources = defaulthash.dup
+    packages.each { |name, pkg| sources[pkg[:source]] <<= pkg }
+
+ def otherstuff
+    for name, pkg in packages
+      source = pkg[:source]
+      sources[source] || sources[source] = []
+      sources[source] << pkg
+    end
 
     # Run pkghelper for each unique source, mapping names to
     # matching hashes.
-    names = Hash.new([])
-    sources.each{|src, pkgs| pkghelper(src, *pkgs).each{|hash|
-      names[hash[:pattern]] <<= hash
-    }}
-
-      #packages[pattern].provider = new(hash)
-    # For each name, construct a new provider. Each provider is
-    # given an array of package hashes that it might later install,
-    # remove or whatever.
-    for name, hashes in names
-      if hashes
-        packages[name].provider = new({})
-      end
-    end
-
-    return
-
-
+    matches = {}
     for source, pkgs in sources
-      for hash in pkghelper(source, *pkgs)
-
+      puts 
+      for match in pkghelper(source, *pkgs.each{|p| return p[:name]})
+        pattern = match[:pattern]
+        names[pattern] || names[pattern] = []
+        names[pattern] << match
       end
     end
 
-
-
-
-
-
-    present = Hash.new([])
-    absent = Hash.new([])
-    sources.each{|s,p| pkghelper(s, *p).each do |hash|
-      pattern = hash[:pattern]
-      if hash[:ensure] == "present"
-        present[pattern] = present[pattern] << hash
-      else
-        absent[pattern] = absent[pattern] << hash
-      end
-    }
-
-    for pattern, hashes in absent do
-      packages[pattern].provider = new(hash)
-        #patterns.each{|p| packages[p].provider = new(hash)}
-    end
-    for pattern, hashes
-    for pattern, hashes in [present, absent].flatten do
-    end
-
-    allhashes = Hash.new([])
-    sources.each do |source, patterns|
-      for hash in pkghelper(source, *patterns)
-        allhashes[hash[:pattern]] = allhashes[hash[:pattern]] << hash
-      end
-    end
-
-    for pattern, hashes in hashes do
-      for hash in hashes do
-        if hash[:ensure] != "present"
-      end
-    end
-
-    for hash in hashes do
-      if hash[:ensure] != "present"
-        hash[:absent]
-      end
-    end
-        patterns.each{|p| packages[p].provider = new(hash)}
-
-    absent.each do |pattern, absents|
-      puts ">>> #{packages[pattern].provider@absent}"
-      packages[pattern].provider@absent
-      #packages[pattern].provider@property_hash[:absent] = absents
-    end
+    #names.each{|name,pkg|
+    #  puts ">>> #{name} #{names[name].length}"
+    #}
+    #names.each{|name,matches|
+    #  packages[name].provider.matches = matches
+    #}
   end
 
   def query
+    for pkg in @matches
+      #puts ">>> #{pkg[:pattern]} #{pkg[:name]} #{pkg[:ensure]}"
+    end
+
+
     absent = []
     for pkg in pkghelper(@resource[:source], @resource[:name])
       if pkg[:ensure] == "present"
