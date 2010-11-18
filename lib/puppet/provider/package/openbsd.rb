@@ -34,8 +34,7 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
     }}
 
     for pattern, matchset in matches
-      pkg = new(packages[pattern])
-      pkg.matches = matchset
+      packages[pattern].provider.matches = matchset
     end
 
   end
