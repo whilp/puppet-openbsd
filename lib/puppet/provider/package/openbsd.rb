@@ -41,12 +41,6 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
 
   def query
     for pkg in @matches
-      puts ">>> #{pkg[:pattern]} #{pkg[:name]} #{pkg[:ensure]}"
-    end
-
-
-    absent = []
-    for pkg in pkghelper(@resource[:source], @resource[:name])
       if pkg[:ensure] == "present"
         return pkg
       else
