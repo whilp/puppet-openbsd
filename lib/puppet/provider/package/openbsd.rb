@@ -30,6 +30,7 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
     matches = defaulthash.dup
     sources.each { |src, pkgs| 
       pkghelper(src, *pkgs.collect { |p| p[:name] }).each { |match|
+        match[:ensure] = match[:ensure].intern
         matches[match[:pattern]] <<= match
     }}
 
