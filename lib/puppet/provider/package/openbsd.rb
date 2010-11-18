@@ -17,19 +17,32 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   attr_accessor :matches
 
   def self.prefetch(packages)
+    # Create a hash that uses a (new) array for missing keys.
     defaulthash = Hash.new { |h, k| [] }
+
     # Invert the packages hash, mapping each unique source to the
     # packages defined with that source. This allows us to make the
     # fewest number of calls to pkghelper (and, possibly, to a slow
     # resource on the net defined in PKG_PATH).
-
     sources = defaulthash.dup
     packages.each { |name, pkg| sources[pkg[:source]] <<= pkg }
+
+    matches = defaulthash.dup
+    sources.each { |src, pkgs| 
+      pkghelper(src, *pkgs.collect { |p| p[:name] }).each { |match|
+        matches[match[:pattern]] <<= match
+    }}
+
+    for pattern, matchset in matches
+      pkg = new(packages[pattern])
+      pkg.matches = matchset
+    end
+
   end
 
   def query
     for pkg in @matches
-      #puts ">>> #{pkg[:pattern]} #{pkg[:name]} #{pkg[:ensure]}"
+      puts ">>> #{pkg[:pattern]} #{pkg[:name]} #{pkg[:ensure]}"
     end
 
 
