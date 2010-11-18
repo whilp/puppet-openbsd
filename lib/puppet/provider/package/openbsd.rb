@@ -15,9 +15,38 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
   has_feature :versionable
 
   def self.prefetch(packages)
+    # Invert the packages hash, mapping each unique source to the
+    # packages defined with that source.
     sources = Hash.new([])
-    packages.each{|name,pkg| 
-        sources[pkg[:source]] = sources[pkg[:source]] << name}
+    packages.each{|name,pkg| sources[pkg[:source]] <<= name}
+
+    # Run pkghelper for each unique source, mapping names to
+    # matching hashes.
+    names = Hash.new([])
+    sources.each{|src, pkgs| pkghelper(src, *pkgs).each{|hash|
+      names[hash[:pattern]] <<= hash
+    }}
+
+      #packages[pattern].provider = new(hash)
+    # For each name, construct a new provider. Each provider is
+    # given an array of package hashes that it might later install,
+    # remove or whatever.
+    for name, hashes in names
+      if hashes
+        packages[name].provider = new({})
+      end
+    end
+
+    return
+
+
+    for source, pkgs in sources
+      for hash in pkghelper(source, *pkgs)
+
+      end
+    end
+
+
 
 
 
