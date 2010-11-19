@@ -62,6 +62,13 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
     end
   end
 
+  def uninstall
+    packages = mismatches.collect { |p| p[:pkgname] }
+    withenv :PKG_PATH => @resource[:source] do
+      pkgdelete(*packages)
+    end
+  end
+
 end
 
 # Inline withenv() for pkghelper.
