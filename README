@@ -23,14 +23,14 @@ In this example, any version of Python that's greater than 2.6 and less than 2.7
 will be installed. You can also specify which package flavor to install or
 remove:
 
-	package { "vim-*-no_x11": ensure => present }
+    package { "vim-*-no_x11": ensure => present }
 
 Here, any version of Vim that was built for systems without X11 will be
 installed. Packages with name parameters that are not valid OpenBSD package
 specifications will result in no match; the following, for example, is
 incorrect:
 
-	package { "vim": ensure => present }
+    package { "vim": ensure => present }
 
 Instead, to select any set of flavors or versions, use a double dash:
 
