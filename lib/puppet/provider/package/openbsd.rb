@@ -20,13 +20,13 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
     # Create a hash that uses a (new) array for missing keys.
     defaulthash = Hash.new { |h, k| [] }
 
-    # Invert the packages hash, mapping each unique source to the
-    # packages defined with that source. This allows us to make the
-    # fewest number of calls to pkghelper (and, possibly, to a slow
-    # resource on the net defined in PKG_PATH).
+    # Aggregate packages by their source so that we can make the
+    # fewest possible trips to the network (:source == PKG_PATH).
     sources = defaulthash.dup
     packages.each { |name, pkg| sources[pkg[:source]] <<= pkg }
 
+    # Run pkghelper on all of the patterns we got, parsing its
+    # output and doing a bit of prep on the match hashes.
     matches = defaulthash.dup
     sources.each { |src, pkgs| 
       pkghelper(src, *pkgs.collect { |p| p[:name] }).each { |match|
@@ -34,6 +34,9 @@ Puppet::Type.type(:package).provide :openbsd, :parent => Puppet::Provider::Packa
         matches[match[:pattern]] <<= match
     }}
 
+    # Each pattern may produce any number of matches, so store the
+    # array of matches in an attribute for the other methods to
+    # access later.
     for pattern, matchset in matches
       packages[pattern].provider.matches = matchset
     end
