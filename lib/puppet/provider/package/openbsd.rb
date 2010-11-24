@@ -106,7 +106,7 @@ def pkghelper(pkgpath, *pkgspecs)
     fields = [:ensure, :pattern, :name, :version, :flavor]
     if match = %r{^(present|absent)\t([^ ]*)\t(.*)-(\d.*?)(-.*)?$}.match(line)
       hash = {}
-      fields.zip(match.captures) {|f,v| hash[f] = v }
+      fields.zip(match.captures) {|f,v| hash[f] = v ? v.gsub(/(^-|-$)/, '') : v }
       hash[:pkgname] = hash.values_at(:name, :version, :flavor).join("-").chomp("-")
       packages << hash
     end
